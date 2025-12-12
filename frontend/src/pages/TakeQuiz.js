@@ -39,7 +39,6 @@ function TakeQuiz() {
     setScore(correctCount);
     setSubmitted(true);
 
-    // Save attempt (optional, but matches your backend)
     fetch("http://localhost:5000/attempt/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -52,9 +51,9 @@ function TakeQuiz() {
     }).catch(() => {});
   }
 
-  if (loading) return <div className="container">Loading quiz…</div>;
-  if (error) return <div className="container" style={{ color: "red" }}>Error: {error}</div>;
-  if (!quiz) return <div className="container">Quiz not found.</div>;
+  if (loading) return <div className="container page box">Loading quiz…</div>;
+  if (error) return <div className="container page box" style={{ color: "red" }}>Error: {error}</div>;
+  if (!quiz) return <div className="container page box">Quiz not found.</div>;
 
   if (!quiz.questions || quiz.questions.length === 0) {
     return (
@@ -67,7 +66,7 @@ function TakeQuiz() {
   }
 
   return (
-    <div className="container">
+    <div className="container page box">
       <BackButton />
 
       <h2>{quiz.title}</h2>

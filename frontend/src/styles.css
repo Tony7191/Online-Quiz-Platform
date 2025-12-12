@@ -13,10 +13,10 @@ body {
   margin: 40px auto;
   padding: 20px;
   background: #E6E6E6;
-  box-shadow: #4f575f 0px 4px 12px;
   border-radius: 8px;
   font-family: Arial, sans-serif;
   min-width: 300px;
+  transition: 0.5s;
 }
 
 h2 {
@@ -102,4 +102,27 @@ a:hover {
 .fade-in {
   opacity: 1;
   transform: translateY(0);
+}
+.route-stage {
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.route-stage.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.route-stage.fade-out {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.mount {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.mount.show {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 180ms ease, transform 180ms ease;
 }

@@ -39,7 +39,7 @@ function QuizList() {
   }
 
   if (loading) {
-    return <div className="container">Loading quizzes…</div>;
+    return <div className="container page box">Loading quizzes…</div>;
   }
 
   if (error) {
