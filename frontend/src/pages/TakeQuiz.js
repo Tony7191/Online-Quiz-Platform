@@ -1,97 +1,75 @@
+import { Link } from "react-router-dom";
 import { useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
-import BackButton from "../components/BackButton";
+import { useEffect, useState } from "react";
 
-
-function TakeQuiz() {
+function QuizList() {
+  const [quizzes, setQuizzes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { quizId } = useParams();
-  const [quiz, setQuiz] = useState(null);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(null);
 
-  // Load quiz + questions from MongoDB
   useEffect(() => {
+    setLoading(true);
+    setError(null);
+
     fetch(`http://localhost:5000/quiz/${quizId}`)
-      .then((res) => res.json())
-      .then((data) => setQuiz(data))
-      .catch((err) => console.log(err));
-  }, [quizId]);
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`Server error (${res.status})`);
+        return res.json();
+      })
+      .then((data) => setQuizzes(Array.isArray(data) ? data : []))
+      .catch((err) => setError(err.message || "Failed to load quizzes"))
+      .finally(() => setLoading(false));
+  }, []);
 
-  if (!quiz) return <div>Loading quiz...</div>;
+  async function deleteQuiz(quizId) {
+    const ok = window.confirm("Are you sure you want to delete this quiz?");
+    if (!ok) return;
 
-  // QUIZ HAS NO QUESTIONS
-  if (!quiz.questions || quiz.questions.length === 0) {
-    return <p>This quiz has no questions yet.</p>;
+    const res = await fetch(`http://localhost:5000/quiz/${quizId}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) return alert(data.message || "Failed to delete quiz.");
+
+    setQuizzes((prev) => prev.filter((q) => q._id !== quizId));
   }
 
-  function submitQuiz() {
-    let correctCount = 0;
-
-    quiz.questions.forEach((q, index) => {
-      if (selectedAnswers[index] === q.correct) {
-        correctCount++;
-      }
-    });
-
-    setScore(correctCount);
-    setSubmitted(true);
-
-    // Save attempt to backend
-    fetch("http://localhost:5000/attempt/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        studentId: 10, // mock student ID
-        quizId: quizId,
-        answers: selectedAnswers,
-        score: correctCount,
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => console.log("Attempt saved:", data))
-      .catch((err) => console.log(err));
-  }
+  if (loading) return <div className="container">Loading quizzes…</div>;
+  if (error) return <div className="container" style={{ color: "red" }}>Error: {error}</div>;
 
   return (
-    <div>
-      <BackButton />
+    <div className="container">
+      <h2>Available Quizzes</h2>
 
-
-      <h2>{quiz.title}</h2>
-
-      {!submitted &&
-        quiz.questions.map((q, index) => (
-          <div key={index} style={{ marginBottom: "20px" }}>
-            <p><strong>Q{index + 1}:</strong> {q.text}</p>
-
-            {q.options.map((opt, i) => (
-              <label key={i} style={{ display: "block" }}>
-                <input
-                  type="radio"
-                  name={`question-${index}`}
-                  onChange={() =>
-                    setSelectedAnswers({
-                      ...selectedAnswers,
-                      [index]: i,
-                    })
-                  }
-                />
-                {opt}
-              </label>
-            ))}
-          </div>
-        ))}
-
-      {!submitted && (
-        <button onClick={submitQuiz}>Submit Quiz</button>
+      {quizzes.length === 0 ? (
+        <p>No quizzes found.</p>
+      ) : (
+        <ul>
+          {quizzes.map((quiz) => (
+            <li key={quiz._id}>
+              <Link to={`/quiz/${quiz._id}`}>{quiz.title || "Untitled Quiz"}</Link>
+              {" — "}
+              <Link to={`/quiz/${quiz._id}/add-question`}>Add Question</Link>
+              {" — "}
+              <button className="delete-btn" onClick={() => deleteQuiz(quiz._id)}>
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
 
-      {submitted && (
-        <h3>Your Score: {score} / {quiz.questions.length}</h3>
-      )}
+      <br />
+
+      <Link to="/history">
+        <button>View My Results</button>
+      </Link>
+
+      <Link to="/create">
+        <button>Add New Quiz</button>
+      </Link>
     </div>
   );
 }
 
-export default TakeQuiz;
+export default QuizList;

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import BackButton from "./components/BackButton";
 
-
 function AddQuestion() {
   const { quizId } = useParams();
 
@@ -12,61 +11,55 @@ function AddQuestion() {
   const [msg, setMsg] = useState("");
   const [quiz, setQuiz] = useState(null);
 
-  // Load quiz with existing questions
   useEffect(() => {
     fetch(`http://localhost:5000/quiz/${quizId}`)
       .then((res) => res.json())
       .then((data) => setQuiz(data))
-      .catch((err) => console.log(err));
+      .catch(() => setMsg("Failed to load quiz."));
   }, [quizId]);
 
-  // ADD QUESTION
-  function submitQuestion() {
-    if (!text.trim()) {
-      setMsg("Question text cannot be empty.");
-      return;
-    }
-    if (options.some((opt) => !opt.trim())) {
-      setMsg("All options must be filled in.");
-      return;
-    }
+  async function submitQuestion() {
+    setMsg("");
+
+    if (!text.trim()) return setMsg("Question text cannot be empty.");
+    if (options.some((opt) => !opt.trim())) return setMsg("All options must be filled in.");
 
     const payload = { text, options, correct };
 
-    fetch(`http://localhost:5000/quiz/${quizId}/add-question`, {
+    const res = await fetch(`http://localhost:5000/quiz/${quizId}/add-question`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setMsg("Question added!");
-        setText("");
-        setOptions(["", "", "", ""]);
-        setCorrect(0);
-        setQuiz(data.quiz); // refresh quiz with new question
-      })
-      .catch((err) => console.log(err));
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return setMsg(data.message || "Failed to add question.");
+
+    setMsg("Question added!");
+    setText("");
+    setOptions(["", "", "", ""]);
+    setCorrect(0);
+    setQuiz(data.quiz);
   }
 
-  // DELETE QUESTION
-  function deleteQuestion(index) {
-    if (!window.confirm("Delete this question?")) return;
+  async function deleteQuestion(index) {
+    const ok = window.confirm("Delete this question?");
+    if (!ok) return;
 
-    fetch(`http://localhost:5000/quiz/${quizId}/question/${index}`, {
+    const res = await fetch(`http://localhost:5000/quiz/${quizId}/question/${index}`, {
       method: "DELETE",
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setQuiz(data.quiz); // update quiz after deletion
-      })
-      .catch((err) => console.log(err));
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return setMsg(data.message || "Failed to delete question.");
+
+    setQuiz(data.quiz);
   }
 
-  if (!quiz) return <p>Loading quiz...</p>;
+  if (!quiz) return <div className="container">Loading quiz...</div>;
 
   return (
-    <div>
+    <div className="container">
       <BackButton />
 
       <h2>Add Question to: {quiz.title}</h2>
@@ -78,7 +71,7 @@ function AddQuestion() {
         onChange={(e) => setText(e.target.value)}
       />
 
-      <h3>Options:</h3>
+      <h3>Options</h3>
       {options.map((opt, i) => (
         <input
           key={i}
@@ -93,7 +86,7 @@ function AddQuestion() {
         />
       ))}
 
-      <h3>Correct Answer:</h3>
+      <h3>Correct Answer</h3>
       <select value={correct} onChange={(e) => setCorrect(Number(e.target.value))}>
         {options.map((_, i) => (
           <option key={i} value={i}>
@@ -102,25 +95,19 @@ function AddQuestion() {
         ))}
       </select>
 
-      <br /><br />
-
       <button onClick={submitQuestion}>Add Question</button>
 
-      {msg && <p style={{ color: "green" }}>{msg}</p>}
+      {msg && <p style={{ marginTop: 10 }}>{msg}</p>}
 
       <hr />
 
-      <h3>Existing Questions:</h3>
-
+      <h3>Existing Questions</h3>
       {quiz.questions.length === 0 && <p>No questions yet.</p>}
 
       {quiz.questions.map((q, index) => (
-        <div key={index} style={{ marginBottom: "15px" }}>
+        <div key={index} style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
           <strong>{q.text}</strong>
-          <button
-            onClick={() => deleteQuestion(index)}
-            style={{ marginLeft: "10px", color: "red" }}
-          >
+          <button className="delete-btn" onClick={() => deleteQuestion(index)}>
             Delete
           </button>
         </div>

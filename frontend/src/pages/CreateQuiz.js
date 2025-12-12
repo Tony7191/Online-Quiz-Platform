@@ -2,35 +2,33 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BackButton from "../components/BackButton";
 
-
 function CreateQuiz() {
   const [title, setTitle] = useState("");
   const navigate = useNavigate();
 
-  function submitQuiz() {
-    fetch("http://localhost:5000/quiz/create", {
+  async function submitQuiz() {
+    if (!title.trim()) return alert("Quiz title cannot be empty.");
+
+    const res = await fetch("http://localhost:5000/quiz/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title })
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        alert("Quiz created!");
+      body: JSON.stringify({ title }),
+    });
 
-        // IMPORTANT: Use MongoDB _id from the backend
-        const newQuizId = data.quiz._id;
+    const data = await res.json();
 
-        // Redirect to add question page after creating quiz
-        navigate(`/quiz/${newQuizId}/add-question`);
+    if (!res.ok) return alert(data.message || "Failed to create quiz.");
 
-        setTitle("");
-      });
+    const newQuizId = data?.quiz?._id;
+    if (!newQuizId) return alert("Quiz created, but no quiz id returned.");
+
+    setTitle("");
+    navigate(`/quiz/${newQuizId}/add-question`);
   }
 
   return (
-    <div>
+    <div className="container">
       <BackButton />
-
 
       <h2>Create a New Quiz</h2>
 

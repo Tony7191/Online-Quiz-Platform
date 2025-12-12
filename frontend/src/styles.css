@@ -1,4 +1,3 @@
-/* Center the main content container */
 .container {
   max-width: 600px;
   margin: 40px auto;
@@ -9,13 +8,11 @@
   font-family: Arial, sans-serif;
 }
 
-/* Headings */
 h2 {
   text-align: center;
   margin-bottom: 20px;
 }
 
-/* Buttons */
 button {
   padding: 8px 14px;
   margin: 5px;
@@ -31,7 +28,6 @@ button:hover {
   background-color: #1352aa;
 }
 
-/* Red delete buttons */
 button.delete-btn {
   background-color: #e74c3c;
 }
@@ -40,7 +36,6 @@ button.delete-btn:hover {
   background-color: #c0392b;
 }
 
-/* Inputs */
 input, select {
   width: 100%;
   padding: 8px;
@@ -49,7 +44,6 @@ input, select {
   border-radius: 4px;
 }
 
-/* List styling */
 ul {
   list-style-type: none;
   padding-left: 0;
@@ -59,8 +53,6 @@ li {
   padding: 10px 0;
   border-bottom: 1px solid #eee;
 }
-
-/* Links */
 a {
   color: #1f7aff;
   text-decoration: none;
