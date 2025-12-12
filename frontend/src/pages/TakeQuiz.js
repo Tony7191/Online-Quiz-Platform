@@ -58,7 +58,7 @@ function TakeQuiz() {
 
   if (!quiz.questions || quiz.questions.length === 0) {
     return (
-      <div className="container">
+      <div className="container page box">
         <BackButton />
         <h2>{quiz.title}</h2>
         <p>This quiz has no questions yet.</p>

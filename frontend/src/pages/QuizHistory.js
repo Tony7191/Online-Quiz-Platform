@@ -6,7 +6,7 @@ function QuizHistory() {
   const { studentId } = useParams();
 
   return (
-    <div>
+    <div className="container page box">
       <BackButton />
 
       <h2>Quiz Results for student #{studentId}</h2>

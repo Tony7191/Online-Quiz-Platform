@@ -47,7 +47,7 @@ function QuizList() {
   }
 
   return (
-    <div className="container">
+    <div className="container page box">
       <h2>Available Quizzes</h2>
 
       {quizzes.length === 0 ? (

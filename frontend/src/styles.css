@@ -1,11 +1,22 @@
+body {
+  background-color: #001325;
+  margin: 0;
+  padding: 0;
+  color: #050E3C;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
 .container {
   max-width: 600px;
   margin: 40px auto;
   padding: 20px;
-  background: #ffffff;
+  background: #E6E6E6;
+  box-shadow: #4f575f 0px 4px 12px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   font-family: Arial, sans-serif;
+  min-width: 300px;
 }
 
 h2 {
@@ -19,25 +30,32 @@ button {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  background-color: #340892;
+  background-color: #050E3C;
   color: white;
   font-weight: bold;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background-color 150ms ease;
 }
 
 button:hover {
-  background-color: #1352aa;
+  background-color: #012c67;
+  transform: translateY(-1px);
 }
-
+button:active {
+  transform: scale(0.98);
+}
 button.delete-btn {
-  background-color: #e74c3c;
+  background-color: #540101;
 }
 
 button.delete-btn:hover {
-  background-color: #c0392b;
+  background-color: #CF0F0F;
 }
 
 input, select {
-  width: 100%;
+  width: 80%;
   padding: 8px;
   margin: 6px 0;
   border: 1px solid #ccc;
@@ -61,4 +79,27 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+* {
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+}
+
+.page,
+.box {
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+
+.fade-out {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.fade-in {
+  opacity: 1;
+  transform: translateY(0);
 }

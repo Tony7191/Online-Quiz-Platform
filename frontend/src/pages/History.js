@@ -12,7 +12,7 @@ function History() {
   }, []);
 
   return (
-    <div className="container">
+    <div className="container page box">
       <BackButton />
 
       <h2>Your Quiz Attempts</h2>

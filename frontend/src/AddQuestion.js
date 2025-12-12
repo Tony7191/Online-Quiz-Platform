@@ -59,7 +59,7 @@ function AddQuestion() {
   if (!quiz) return <div className="container">Loading quiz...</div>;
 
   return (
-    <div className="container">
+    <div className="container page box">
       <BackButton />
 
       <h2>Add Question to: {quiz.title}</h2>

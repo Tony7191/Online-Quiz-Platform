@@ -27,7 +27,7 @@ function CreateQuiz() {
   }
 
   return (
-    <div className="container">
+    <div className="container page box">
       <BackButton />
 
       <h2>Create a New Quiz</h2>

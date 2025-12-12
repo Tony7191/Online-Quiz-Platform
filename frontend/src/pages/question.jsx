@@ -13,7 +13,7 @@ function QuestionEditor({ question, onChange, onRemove }) {
   };
 
   return (
-    <div>
+    <div className="container page box">
       <input
         placeholder="Question text"
         value={text}
