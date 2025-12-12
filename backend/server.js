@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -15,7 +16,7 @@ app.use("/attempt", attemptRoutes);
 
 const PORT = 5000;
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/online_quiz_platform";
+const MONGO_URI = process.env.MONGO_URI;
 
 mongoose
   .connect(MONGO_URI)
