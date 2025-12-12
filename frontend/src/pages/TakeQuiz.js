@@ -1,9 +1,12 @@
-import { useParams } from "react-router-dom";
+import { useParams, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import BackButton from "../components/BackButton";
 
 function TakeQuiz() {
   const { quizId } = useParams();
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const token = localStorage.getItem("token");
 
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +32,7 @@ function TakeQuiz() {
   }, [quizId]);
 
   async function submitQuiz() {
-    if (!quiz?.questions?.length) return;
+    if (!quiz?.questions?.length || !token) return;
 
     let correctCount = 0;
     quiz.questions.forEach((q, index) => {
@@ -41,9 +44,11 @@ function TakeQuiz() {
 
     fetch("http://localhost:5000/attempt/submit", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({
-        studentId: 10,
         quizId,
         answers: selectedAnswers,
         score: correctCount,
@@ -51,8 +56,20 @@ function TakeQuiz() {
     }).catch(() => {});
   }
 
+  if (user?.role === "teacher") {
+    return <Navigate to="/" replace />;
+  }
+
   if (loading) return <div className="container page box">Loading quiz…</div>;
-  if (error) return <div className="container page box" style={{ color: "red" }}>Error: {error}</div>;
+
+  if (error) {
+    return (
+      <div className="container page box" style={{ color: "red" }}>
+        Error: {error}
+      </div>
+    );
+  }
+
   if (!quiz) return <div className="container page box">Quiz not found.</div>;
 
   if (!quiz.questions || quiz.questions.length === 0) {
@@ -68,7 +85,6 @@ function TakeQuiz() {
   return (
     <div className="container page box">
       <BackButton />
-
       <h2>{quiz.title}</h2>
 
       {!submitted &&

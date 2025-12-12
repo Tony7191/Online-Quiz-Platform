@@ -7,20 +7,38 @@ function CreateQuiz() {
   const navigate = useNavigate();
 
   async function submitQuiz() {
-    if (!title.trim()) return alert("Quiz title cannot be empty.");
+    if (!title.trim()) {
+      alert("Quiz title cannot be empty.");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in as a teacher or admin.");
+      return;
+    }
 
     const res = await fetch("http://localhost:5000/quiz/create", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ title }),
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
 
-    if (!res.ok) return alert(data.message || "Failed to create quiz.");
+    if (!res.ok) {
+      alert(data.message || "Failed to create quiz.");
+      return;
+    }
 
     const newQuizId = data?.quiz?._id;
-    if (!newQuizId) return alert("Quiz created, but no quiz id returned.");
+    if (!newQuizId) {
+      alert("Quiz created, but no quiz id returned.");
+      return;
+    }
 
     setTitle("");
     navigate(`/quiz/${newQuizId}/add-question`);

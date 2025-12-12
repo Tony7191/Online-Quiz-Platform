@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QuestionEditor from './question';
 
+const token = localStorage.getItem("token");
+
+
 function CreateQuizPage({ teacherId }) {
   const [title, setTitle] = useState('');
   const [questions, setQuestions] = useState([]);
@@ -33,6 +36,7 @@ function CreateQuizPage({ teacherId }) {
 
     navigate('/teacher/dashboard');
   };
+  
 
   return (
     <form onSubmit={handleSubmit}>

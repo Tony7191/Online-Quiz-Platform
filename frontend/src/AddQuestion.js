@@ -11,6 +11,8 @@ function AddQuestion() {
   const [msg, setMsg] = useState("");
   const [quiz, setQuiz] = useState(null);
 
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
     fetch(`http://localhost:5000/quiz/${quizId}`)
       .then((res) => res.json())
@@ -21,16 +23,24 @@ function AddQuestion() {
   async function submitQuestion() {
     setMsg("");
 
+    if (!token) return setMsg("Not authenticated. Please log in again.");
     if (!text.trim()) return setMsg("Question text cannot be empty.");
-    if (options.some((opt) => !opt.trim())) return setMsg("All options must be filled in.");
+    if (options.some((opt) => !opt.trim()))
+      return setMsg("All options must be filled in.");
 
     const payload = { text, options, correct };
 
-    const res = await fetch(`http://localhost:5000/quiz/${quizId}/add-question`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(
+      `http://localhost:5000/quiz/${quizId}/add-question`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return setMsg(data.message || "Failed to add question.");
@@ -43,12 +53,22 @@ function AddQuestion() {
   }
 
   async function deleteQuestion(index) {
+    setMsg("");
+
+    if (!token) return setMsg("Not authenticated. Please log in again.");
+
     const ok = window.confirm("Delete this question?");
     if (!ok) return;
 
-    const res = await fetch(`http://localhost:5000/quiz/${quizId}/question/${index}`, {
-      method: "DELETE",
-    });
+    const res = await fetch(
+      `http://localhost:5000/quiz/${quizId}/question/${index}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return setMsg(data.message || "Failed to delete question.");
@@ -56,7 +76,7 @@ function AddQuestion() {
     setQuiz(data.quiz);
   }
 
-  if (!quiz) return <div className="container">Loading quiz...</div>;
+  if (!quiz) return <div className="container page box">Loading quiz...</div>;
 
   return (
     <div className="container page box">
@@ -87,7 +107,10 @@ function AddQuestion() {
       ))}
 
       <h3>Correct Answer</h3>
-      <select value={correct} onChange={(e) => setCorrect(Number(e.target.value))}>
+      <select
+        value={correct}
+        onChange={(e) => setCorrect(Number(e.target.value))}
+      >
         {options.map((_, i) => (
           <option key={i} value={i}>
             Option {i + 1}
@@ -105,7 +128,10 @@ function AddQuestion() {
       {quiz.questions.length === 0 && <p>No questions yet.</p>}
 
       {quiz.questions.map((q, index) => (
-        <div key={index} style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+        <div
+          key={index}
+          style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
+        >
           <strong>{q.text}</strong>
           <button className="delete-btn" onClick={() => deleteQuestion(index)}>
             Delete
