@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body class="bg2">
+  <nav class="nav">
+    <div class="brand">Quiz Platform</div>
+    <div class="navRight">
+      <span class="pill" id="navUser">...</span>
+      <button class="btn small" id="logoutBtn">Logout</button>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <section class="card">
+      <h2>Welcome, <span id="fullName"></span> 🎉</h2>
+      <p class="muted">You are logged in using a secure server session.</p>
+      <div class="row2">
+        <a class="btn accent" href="#">Start Quiz</a>
+        <a class="btn" href="#">My Results</a>
+      </div>
+      <p class="small muted" style="margin-top:14px">Hook the buttons to your quiz pages.</p>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"><div class="dot"></div><div><div class="tTitle" id="tTitle"></div><div class="tMsg" id="tMsg"></div></div></div>
+  <script src="script.js"></script>
+</body>
+</html>

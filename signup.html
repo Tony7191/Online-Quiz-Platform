@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Create account</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body class="bg">
+  <main class="center">
+    <form class="card" id="signupForm" autocomplete="on">
+      <h2>Create account</h2>
+      <p class="muted">All fields required. Strong password enforced.</p>
+
+      <div class="grid">
+        <label>Full name</label>
+        <div class="inputWrap"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10"/><path d="M7 12h7"/><path d="M7 16h6"/></svg>
+          <input id="fullname" autocomplete="name" required minlength="3" maxlength="100" placeholder="e.g., Sara Ali"/>
+        </div>
+
+        <label>Username</label>
+        <div class="inputWrap"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+          <input id="username" autocomplete="username" required minlength="3" maxlength="30" placeholder="letters, numbers, _"/>
+        </div>
+
+        <label>Email</label>
+        <div class="inputWrap"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m4 4 8 8 8-8"/></svg>
+          <input id="email" type="email" autocomplete="email" required placeholder="e.g., sara@mail.com"/>
+        </div>
+
+        <label>Password</label>
+        <div class="inputWrap"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input id="password" type="password" autocomplete="new-password" required minlength="8" placeholder="Upper+lower+num+symbol"/>
+        </div>
+
+        <div class="pwbar" aria-hidden="true"><div id="pwfill"></div></div>
+        <div class="pwhints" id="pwhints"></div>
+
+        <label>Confirm password</label>
+        <div class="inputWrap"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input id="confirm" type="password" autocomplete="new-password" required minlength="8" placeholder="re-type password"/>
+        </div>
+      </div>
+
+      <button class="btn primary" type="submit">Sign Up</button>
+      <div class="row2" style="margin-top:10px">
+        <a class="btn ghost" href="login.html">I already have an account</a>
+        <a class="btn" href="index.html">Home</a>
+      </div>
+      <p class="small muted">Username: 3–30 chars (letters/numbers/_). Password: 8+ with Upper/Lower/Number/Symbol.</p>
+    </form>
+  </main>
+
+  <div id="toast" class="toast"><div class="dot"></div><div><div class="tTitle" id="tTitle"></div><div class="tMsg" id="tMsg"></div></div></div>
+  <script src="script.js"></script>
+</body>
+</html>
