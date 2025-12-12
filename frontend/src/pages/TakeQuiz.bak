@@ -1,0 +1,88 @@
+import { useParams } from "react-router-dom"; 
+import { useState, useEffect } from "react";
+
+function TakeQuiz() {
+  const { quizId } = useParams();
+  const [quiz, setQuiz] = useState(null);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [score, setScore] = useState(null);
+
+  useEffect(() => {
+    fetch(`http://localhost:5000/quiz/${quizId}`)
+      .then(res => res.json())
+      .then(data => setQuiz(data))
+      .catch(err => console.log(err));
+  }, [quizId]);
+
+  if (!quiz) return <div>Loading quiz...</div>;
+
+  // ADDED SAFETY CHECK
+  if (!quiz.questions || quiz.questions.length === 0) {
+    return (
+      <div>
+        <h2>{quiz.title}</h2>
+        <p>This quiz has no questions yet.</p>
+      </div>
+    );
+  }
+
+  function submitQuiz() {
+    let correctCount = 0;
+
+    quiz.questions.forEach((q, i) => {
+      if (selectedAnswers[i] === q.correct) correctCount++;
+    });
+
+    setScore(correctCount);
+    setSubmitted(true);
+
+    fetch("http://localhost:5000/attempt/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        studentId: 10,
+        quizId,
+        answers: selectedAnswers,
+        score: correctCount,
+      }),
+    })
+      .then(res => res.json())
+      .then(data => console.log("Saved:", data));
+  }
+
+  return (
+    <div>
+      <h2>{quiz.title}</h2>
+
+      {!submitted &&
+        quiz.questions.map((q, index) => (
+          <div key={index}>
+            <p>{q.text}</p>
+            {q.options.map((opt, i) => (
+              <label key={i} style={{ display: "block" }}>
+                <input
+                  type="radio"
+                  name={`question-${index}`}
+                  onChange={() =>
+                    setSelectedAnswers({ ...selectedAnswers, [index]: i })
+                  }
+                />
+                {opt}
+              </label>
+            ))}
+          </div>
+        ))}
+
+      {!submitted && (
+        <button onClick={submitQuiz}>Submit Quiz</button>
+      )}
+
+      {submitted && (
+        <h3>Your Score: {score} / {quiz.questions.length}</h3>
+      )}
+    </div>
+  );
+}
+
+export default TakeQuiz;
