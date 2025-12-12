@@ -1,87 +1,75 @@
-import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 function QuizList() {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-
     fetch("http://localhost:5000/quiz/list")
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`Server responded ${res.status}: ${text}`);
-        }
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load quizzes");
         return res.json();
       })
       .then((data) => {
-        //console.log("Raw /quiz/list response:", data);
-
-        if (Array.isArray(data)) {
-          setQuizzes(data);
-        } else {
-          setQuizzes([]);
-          setError("Unexpected response shape. Expected array.");
-          //console.warn("Unexpected /quiz/list shape:", data);
-        }
+        setQuizzes(Array.isArray(data) ? data : []);
+        setLoading(false);
       })
-      .catch((err) => {
-        //console.error("Failed to load quizzes:", err);
-        setError(err.message || "Failed to load quizzes");
-        setQuizzes([]);
-      })
-      .finally(() => setLoading(false));
+      .catch(() => {
+        setError("Could not load quizzes.");
+        setLoading(false);
+      });
   }, []);
 
-  //console.log("QUIZ LIST IN FRONTEND:", quizzes);
+  async function deleteQuiz(quizId) {
+    const confirmDelete = window.confirm("Delete this quiz?");
+    if (!confirmDelete) return;
 
-  if (loading) return <div>Loading quizzes…</div>;
-  if (error) return <div style={{ color: "red" }}>Error: {error}</div>;
+    const res = await fetch(`http://localhost:5000/quiz/${quizId}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      alert("Failed to delete quiz.");
+      return;
+    }
+
+    setQuizzes((prev) => prev.filter((q) => q._id !== quizId));
+  }
+
+  if (loading) {
+    return <div className="container">Loading quizzes…</div>;
+  }
+
+  if (error) {
+    return <div className="container" style={{ color: "red" }}>{error}</div>;
+  }
 
   return (
-    <div>
+    <div className="container">
       <h2>Available Quizzes</h2>
 
       {quizzes.length === 0 ? (
-        <p>No quizzes found.</p>
+        <p>No quizzes available.</p>
       ) : (
         <ul>
           {quizzes.map((quiz) => (
             <li key={quiz._id}>
-              {/* TAKE QUIZ */}
+              <strong>{quiz.title || "Untitled Quiz"}</strong>
+              <br />
+
               <Link to={`/quiz/${quiz._id}`}>
-                {quiz.title || "Untitled Quiz"}
+                <button>Take Quiz</button>
               </Link>
 
-              {" — "}
-
-              {/* ADD QUESTION */}
               <Link to={`/quiz/${quiz._id}/add-question`}>
-                Add Question
+                <button>Add Question</button>
               </Link>
 
-              {" — "}
-
-              {/* DELETE QUIZ */}
               <button
-                onClick={() => {
-                  if (window.confirm("Are you sure you want to delete this quiz?")) {
-                    fetch(`http://localhost:5000/quiz/${quiz._id}`, {
-                      method: "DELETE",
-                    })
-                      .then((res) => res.json())
-                      .then(() => {
-                        // remove deleted quiz from state
-                        setQuizzes(quizzes.filter((q) => q._id !== quiz._id));
-                      })
-                      .catch((err) => console.log(err));
-                  }
-                }}
-                style={{ marginLeft: "10px", color: "red" }}
+                className="delete-btn"
+                onClick={() => deleteQuiz(quiz._id)}
               >
                 Delete
               </button>
@@ -90,14 +78,14 @@ function QuizList() {
         </ul>
       )}
 
-      <br />
-
-      <Link to="/history">
-        <button>View My Results</button>
-      </Link>
+      <hr />
 
       <Link to="/create">
         <button>Add New Quiz</button>
+      </Link>
+
+      <Link to="/history">
+        <button>View My Results</button>
       </Link>
     </div>
   );
