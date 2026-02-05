@@ -1,76 +1,213 @@
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
-const { requireAuth, requireRole } = require("../middleware/auth");
+const { verifyToken, verifyRole } = require("../middleware/auth");
+const Quiz = require("../models/Quiz");
+const Attempt = require("../models/Attempt");
+const Notification = require("../models/Notification");
+const User = require("../models/User");
 
+/**
+ * GET ATTEMPT COUNT (DO NOT CARE ABOUT VISIBILITY)
+ */
+router.get(
+  "/count/:quizId",
+  verifyToken,
+  verifyRole("student"),
+  async (req, res) => {
+    const quiz = await Quiz.findById(req.params.quizId);
+    if (!quiz) return res.status(404).json({ message: "Quiz not found" });
 
-// ===== Attempt Model =====
-const attemptSchema = new mongoose.Schema(
-  {
-    studentId: { type: String, required: true },
-    quizId: { type: String, required: true },
-    score: { type: Number, required: true },
-    answers: { type: Object, required: true },
-  },
-  {
-    timestamps: true, // createdAt, updatedAt
+    const count = await Attempt.countDocuments({
+      studentId: req.user.id,
+      quizId: quiz._id,
+      isSubmitted: true,
+    });
+
+    res.json({ count, maxAttempts: quiz.maxAttempts });
   }
 );
 
-const Attempt = mongoose.model("Attempt", attemptSchema);
-
 /**
- * Student/Admin only:
- * Submit a quiz attempt
+ * START ATTEMPT
  */
 router.post(
-  "/submit",
-  requireAuth,
-  requireRole("student", "admin"),
+  "/start/:quizId",
+  verifyToken,
+  verifyRole("student"),
+  async (req, res) => {
+    const quiz = await Quiz.findById(req.params.quizId);
+    if (!quiz || !quiz.published) {
+      return res.status(404).json({ message: "Quiz not available" });
+    }
+
+    const attemptCount = await Attempt.countDocuments({
+      studentId: req.user.id,
+      quizId: quiz._id,
+      isSubmitted: true,
+    });
+
+    if (attemptCount >= quiz.maxAttempts) {
+      return res.status(403).json({ message: "Maximum attempts reached" });
+    }
+
+    const attempt = await Attempt.create({
+      studentId: req.user.id,
+      quizId: quiz._id,
+    });
+
+    res.status(201).json({ attempt });
+  }
+);
+
+/**
+ * ======================
+ * SUBMIT ATTEMPT (FIXED)
+ * ======================
+ */
+router.post(
+  "/submit/:attemptId",
+  verifyToken,
+  verifyRole("student"),
   async (req, res) => {
     try {
-      const { quizId, answers, score } = req.body;
+      const { answers } = req.body;
 
-      if (!quizId) {
-        return res.status(400).json({ message: "quizId required" });
+      const attempt = await Attempt.findById(req.params.attemptId)
+        .populate("quizId");
+
+      if (!attempt || attempt.isSubmitted) {
+        return res.status(400).json({ message: "Invalid attempt" });
       }
 
-      const newAttempt = await Attempt.create({
-        studentId: req.user.id, // 🔐 derived from token
-        quizId: String(quizId),
-        answers: answers ?? {},
-        score: Number(score ?? 0),
+      // ⏱ Optional: time limit check (keep if you had it before)
+      const elapsedMinutes =
+        (Date.now() - attempt.startedAt.getTime()) / 60000;
+
+      if (elapsedMinutes > attempt.quizId.timeLimit) {
+        return res.status(403).json({ message: "Time limit exceeded" });
+      }
+
+      // ✅ CALCULATE SCORE
+      let score = 0;
+      attempt.quizId.questions.forEach((q, i) => {
+        if (answers?.[i] === q.correct) score++;
+      });
+
+      // 🔒 SNAPSHOT QUESTIONS (CRITICAL FIX)
+      attempt.questionsSnapshot = attempt.quizId.questions.map((q) => ({
+        text: q.text,
+        options: [...q.options],
+        correct: q.correct,
+      }));
+
+      attempt.answers = answers || {};
+      attempt.score = score;
+      attempt.submittedAt = new Date();
+      attempt.isSubmitted = true;
+
+      await attempt.save();
+
+      // 🔔 NOTIFY QUIZ OWNER
+      const student = await User.findById(req.user.id).select("email");
+
+      await Notification.create({
+        userId: attempt.quizId.owner,
+        message: `Student ${student.email} submitted "${attempt.quizId.title}" — Score: ${score}/${attempt.quizId.questions.length}`,
       });
 
       res.json({
-        message: "Attempt saved successfully",
-        attempt: newAttempt,
+        message: "Attempt submitted",
+        score,
+        total: attempt.quizId.questions.length,
       });
     } catch (err) {
-      res.status(500).json({ message: "Failed to save attempt" });
+      console.error(err);
+      res.status(500).json({ message: "Failed to submit attempt" });
     }
   }
 );
 
 /**
- * Student/Admin:
- * Get attempts for the CURRENT logged-in user
- * (Admin can see their own attempts if needed)
+ * STUDENT HISTORY (HIDDEN ONLY)
  */
 router.get(
-  "/my",
-  requireAuth,
-  requireRole("student", "admin"),
+  "/my-attempts",
+  verifyToken,
+  verifyRole("student"),
+  async (req, res) => {
+    const attempts = await Attempt.find({
+      studentId: req.user.id,
+      isSubmitted: true,
+      hiddenForStudent: false,
+    })
+      .populate("quizId", "title")
+      .sort({ submittedAt: -1 });
+
+    res.json(attempts);
+  }
+);
+
+/**
+ * GET SINGLE ATTEMPT WITH ANSWERS (STUDENT)
+ */
+router.get(
+  "/:attemptId",
+  verifyToken,
+  verifyRole("student"),
   async (req, res) => {
     try {
-      const attempts = await Attempt.find({
-        studentId: req.user.id,
-      }).sort({ createdAt: -1 });
+      const attempt = await Attempt.findOne({
+        _id: req.params.attemptId,
+        isSubmitted: true,
+        hiddenForStudent: false,
+      }).populate("quizId", "title questions");
 
-      res.json(attempts);
+      if (!attempt) {
+        return res.status(404).json({ message: "Attempt not found" });
+      }
+
+      if (attempt.studentId.toString() !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      res.json(attempt);
     } catch (err) {
-      res.status(500).json({ message: "Failed to load attempts" });
+      res.status(500).json({ message: "Failed to load attempt" });
     }
+  }
+);
+
+/**
+ * STUDENT HIDE SELECTED ATTEMPTS
+ */
+router.delete(
+  "/",
+  verifyToken,
+  verifyRole("student"),
+  async (req, res) => {
+    await Attempt.updateMany(
+      { _id: { $in: req.body.ids }, studentId: req.user.id },
+      { $set: { hiddenForStudent: true } }
+    );
+
+    res.json({ success: true });
+  }
+);
+
+/**
+ * STUDENT CLEAR HISTORY (VIEW ONLY)
+ */
+router.delete(
+  "/clear/all",
+  verifyToken,
+  verifyRole("student"),
+  async (req, res) => {
+    await Attempt.updateMany(
+      { studentId: req.user.id },
+      { $set: { hiddenForStudent: true } }
+    );
+
+    res.json({ success: true });
   }
 );
 

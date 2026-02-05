@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-function requireAuth(req, res, next) {
+exports.verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -11,20 +12,40 @@ function requireAuth(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    req.user = decoded; // { id, role }
     next();
   } catch (err) {
     return res.status(401).json({ message: "Invalid or expired token" });
   }
-}
+};
 
-function requireRole(...roles) {
-  return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Forbidden" });
+/**
+ * Allow ONE OR MORE roles
+ * Usage: verifyRole("admin")
+ * Usage: verifyRole("admin", "teacher")
+ */
+exports.verifyRole = (...allowedRoles) => {
+  return async (req, res, next) => {
+    if (!req.user) {
+      return res.status(403).json({ message: "Access denied" });
     }
-    next();
-  };
-}
 
-module.exports = { requireAuth, requireRole };
+    try {
+      const user = await User.findById(req.user.id).select("role");
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      req.user.role = user.role;
+
+      if (!allowedRoles.includes(user.role)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      next();
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Failed to verify role" });
+    }
+  };
+};
